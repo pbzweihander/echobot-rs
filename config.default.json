@@ -1,0 +1,10 @@
+{
+    "irc": {
+        "nickname": "",
+        "server": "",
+        "channels": []
+    },
+    "slack": {
+        "token": ""
+    }
+}
