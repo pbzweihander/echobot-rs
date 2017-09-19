@@ -19,7 +19,7 @@ fn main() {
     let config: Config = serde_json::from_reader(config_file).unwrap();
 
     let mut irc = IRC::new(&config.irc.server, &config.irc.nickname).unwrap();
-    irc.join_multi(&config.irc.channels.iter().map(|s| s.as_ref()).collect::<Vec<_>>()).unwrap();
+    irc.join_multi(&config.irc.channels.iter().map(AsRef::as_ref).collect::<Vec<_>>()).unwrap();
 
     for line in irc {
         println!("{}", line);
