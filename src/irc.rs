@@ -49,8 +49,6 @@ impl Iterator for IRC {
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let line = self.reader.next().and_then(|l| l.ok());
-
-        line
+        self.reader.next().and_then(|l| l.ok())
     }
 }
