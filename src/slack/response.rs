@@ -1,4 +1,4 @@
-use super::{SlackUser, SlackChannel};
+use super::{User, Channel};
 
 #[derive(Serialize, Deserialize)]
 pub struct RTMConnect {
@@ -9,11 +9,11 @@ pub struct RTMConnect {
 #[derive(Serialize, Deserialize)]
 pub struct UsersList {
     pub ok: bool,
-    pub members: Vec<SlackUser>,
+    pub members: Vec<User>,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct ChannelsList {
     pub ok: bool,
-    pub channels: Vec<SlackChannel>,
+    pub channels: Vec<Channel>,
 }

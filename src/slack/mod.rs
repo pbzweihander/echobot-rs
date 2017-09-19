@@ -51,7 +51,7 @@ impl Slack {
         Ok(SlackRTM { socket })
     }
 
-    pub fn users_list(&self) -> Result<Vec<SlackUser>, Box<Error>> {
+    pub fn users_list(&self) -> Result<Vec<User>, Box<Error>> {
         let mut hm = HashMap::new();
         hm.insert("token".to_owned(), self.token.clone());
         let parsed: UsersList = self.request("users.list", hm)?;
@@ -63,7 +63,7 @@ impl Slack {
         Ok(parsed.members)
     }
 
-    pub fn channels_list(&self) -> Result<Vec<SlackChannel>, Box<Error>> {
+    pub fn channels_list(&self) -> Result<Vec<Channel>, Box<Error>> {
         let mut hm = HashMap::new();
         hm.insert("token".to_owned(), self.token.clone());
         let parsed: ChannelsList = self.request("channels.list", hm)?;
@@ -81,7 +81,7 @@ pub struct SlackRTM {
 }
 
 impl SlackRTM {
-    fn parse(content: tungstenite::Message) -> Option<SlackMessage> {
+    fn parse(content: tungstenite::Message) -> Option<Message> {
         if let tungstenite::Message::Text(t) = content {
             serde_json::from_str(&t).ok()
         } else {
@@ -91,7 +91,7 @@ impl SlackRTM {
 }
 
 impl Iterator for SlackRTM {
-    type Item = SlackMessage;
+    type Item = Message;
 
     fn next(&mut self) -> Option<Self::Item> {
         loop {
@@ -116,20 +116,20 @@ impl Iterator for SlackRTM {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct SlackMessage {
+pub struct Message {
     pub channel: String,
     pub user: String,
     pub text: String,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct SlackUser {
+pub struct User {
     pub id: String,
     pub name: String,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct SlackChannel {
+pub struct Channel {
     pub id: String,
     pub name: String,
 }
