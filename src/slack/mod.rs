@@ -6,6 +6,7 @@ extern crate url;
 
 use ::std::error::Error;
 use ::std::collections::HashMap;
+use ::std::iter::Peekable;
 
 use self::response::*;
 
@@ -37,7 +38,7 @@ impl Slack {
         Ok(parsed)
     }
 
-    pub fn rtm_connect(&self) -> Result<SlackRTM, Box<Error>> {
+    pub fn rtm_connect(&self) -> Result<Peekable<SlackRTM>, Box<Error>> {
         let mut hm = HashMap::new();
         hm.insert("token".to_owned(), self.token.clone());
         let parsed: RTMConnect = self.request("rtm.connect", hm)?;
@@ -48,7 +49,7 @@ impl Slack {
 
         let (socket, _) = tungstenite::connect(url::Url::parse(&parsed.url)?)?;
 
-        Ok(SlackRTM { socket })
+        Ok(SlackRTM { socket }.peekable())
     }
 
     pub fn users_list(&self) -> Result<Vec<User>, Box<Error>> {
