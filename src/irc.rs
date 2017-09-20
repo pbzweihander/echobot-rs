@@ -33,6 +33,11 @@ impl IRC {
         Ok(())
     }
 
+    pub fn privmsg(&mut self, channel: &str, message: &str) -> Result<(), Box<Error>> {
+        self.write(&format!("PRIVMSG {} :{}", channel, message))?;
+        Ok(())
+    }
+
     pub fn join_multi(&mut self, channels: &[&str]) -> Result<(), Box<Error>> {
         for c in channels {
             self.join(c)?;
