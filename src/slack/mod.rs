@@ -100,11 +100,6 @@ impl Iterator for SlackRTM {
                 return None;
             }
             let m = line.unwrap();
-            if m.is_ping() {
-                if self.socket.write_message(tungstenite::Message::Pong(vec![])).is_err() {
-                    return None;
-                }
-            }
 
             let p = SlackRTM::parse(m);
 
