@@ -13,7 +13,19 @@ pub struct UsersList {
 }
 
 #[derive(Serialize, Deserialize)]
+pub struct UsersInfo {
+    pub ok: bool,
+    pub user: User,
+}
+
+#[derive(Serialize, Deserialize)]
 pub struct ChannelsList {
     pub ok: bool,
     pub channels: Vec<Channel>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ChannelsInfo {
+    pub ok: bool,
+    pub channel: Channel,
 }
