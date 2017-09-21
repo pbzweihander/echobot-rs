@@ -8,11 +8,11 @@ pub struct Config {
 pub struct IRCConfig {
     pub server: String,
     pub nickname: String,
-    pub channels: Vec<String>,
+    pub channel: String,
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct SlackConfig {
     pub token: String,
-    pub channels: Vec<String>,
+    pub channel: String,
 }

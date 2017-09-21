@@ -2,10 +2,10 @@
     "irc": {
         "nickname": "",
         "server": "",
-        "channels": []
+        "channel": ""
     },
     "slack": {
         "token": "",
-        "channels": []
+        "channel": ""
     }
 }
