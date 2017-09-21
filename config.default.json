@@ -5,6 +5,7 @@
         "channels": []
     },
     "slack": {
-        "token": ""
+        "token": "",
+        "channels": []
     }
 }

@@ -14,4 +14,5 @@ pub struct IRCConfig {
 #[derive(Serialize, Deserialize)]
 pub struct SlackConfig {
     pub token: String,
+    pub channels: Vec<String>,
 }
