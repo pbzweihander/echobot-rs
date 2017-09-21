@@ -1,14 +1,12 @@
-extern crate reqwest;
-extern crate serde;
-extern crate serde_json;
-extern crate tungstenite;
-extern crate url;
+extern crate regex;
 
 use std::error::Error;
 use std::io::{BufReader, Lines};
 use std::io::prelude::*;
 use std::net::TcpStream;
 use std::iter::Peekable;
+
+use self::regex::Regex;
 
 pub struct IRC {
     stream: TcpStream,
@@ -21,15 +19,15 @@ impl IRC {
         let mut stream = strm.try_clone()?;
         let reader = BufReader::new(strm).lines().peekable();
 
-        stream.write(&format!("USER {} 0 * :zweihander-bot\n", nickname).into_bytes())?;
-        stream.write(&format!("NICK {}\n", nickname).into_bytes())?;
+        stream.write_all(format!("USER {} 0 * :zweihander-bot\n", nickname).as_bytes())?;
+        stream.write_all(format!("NICK {}\n", nickname).as_bytes())?;
         stream.flush()?;
 
         Ok(IRC { stream, reader })
     }
 
     pub fn write(&mut self, content: &str) -> Result<(), Box<Error>> {
-        self.stream.write(content.as_bytes())?;
+        self.stream.write_all(content.as_bytes())?;
         Ok(())
     }
 
@@ -53,13 +51,51 @@ impl IRC {
     pub fn peek(&mut self) -> Option<&Result<String, ::std::io::Error>> {
         self.reader.peek()
     }
+
+    fn parse_privmsg(content: Option<String>) -> Option<Message> {
+        if content.is_none() {
+            return None;
+        }
+
+        let r = Regex::new(r"^:(.+?)!.+ PRIVMSG (#.+?) :(.+)").unwrap();
+        let content = content.unwrap();
+        let caps = r.captures(&content);
+        if caps.is_none() {
+            return None;
+        }
+        let caps = caps.unwrap();
+
+        let user = match caps.get(1) {
+            Some(s) => s.as_str(),
+            None => { return None; }
+        };
+        let channel = match caps.get(2) {
+            Some(s) => s.as_str(),
+            None => { return None; }
+        };
+        let text = match caps.get(3) {
+            Some(s) => s.as_str(),
+            None => { return None; }
+        };
+
+        Some(Message { channel: channel.to_owned(), user: user.to_owned(), text: text.to_owned() })
+    }
 }
 
 impl Iterator for IRC {
-    type Item = String;
+    type Item = Message;
 
     fn next(&mut self) -> Option<Self::Item> {
-        self.reader.next().and_then(|l| l.ok())
+        loop {
+            let line = self.reader.next().and_then(|l| l.ok());
+            if line.is_none() {
+                return None;
+            }
+            let line = IRC::parse_privmsg(line);
+            if line.is_some() {
+                return line;
+            }
+        }
     }
 }
 
