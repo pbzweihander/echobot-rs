@@ -40,7 +40,7 @@ impl SlackRequest {
         let parsed: RTMConnect = SlackRequest::request("rtm.connect", hm)?;
 
         if !parsed.ok {
-            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Slack Response Error")));
+            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Bad Slack Response")));
         }
 
         let (socket, _) = tungstenite::connect(url::Url::parse(&parsed.url)?)?;
@@ -54,7 +54,7 @@ impl SlackRequest {
         let parsed: UsersList = SlackRequest::request("users.list", hm)?;
 
         if !parsed.ok {
-            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Slack Response Error")));
+            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Bad Slack Response")));
         }
 
         Ok(parsed.members)
@@ -67,7 +67,7 @@ impl SlackRequest {
         let parsed: UsersInfo = SlackRequest::request("users.info", hm)?;
 
         if !parsed.ok {
-            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Slack Response Error")));
+            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Bad Slack Response")));
         }
 
         Ok(parsed.user)
@@ -79,7 +79,7 @@ impl SlackRequest {
         let parsed: ChannelsList = SlackRequest::request("channels.list", hm)?;
 
         if !parsed.ok {
-            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Slack Response Error")));
+            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Bad Slack Response")));
         }
 
         Ok(parsed.channels)
@@ -92,10 +92,24 @@ impl SlackRequest {
         let parsed: ChannelsInfo = SlackRequest::request("channels.info", hm)?;
 
         if !parsed.ok {
-            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Slack Response Error")));
+            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Bad Slack Response")));
         }
 
         Ok(parsed.channel)
+    }
+
+    pub fn chat_postMessage(&self, channel: &str, text: &str) -> Result<(), Box<Error>> {
+        let mut hm = HashMap::new();
+        hm.insert("token".to_owned(), self.token.clone());
+        hm.insert("channel".to_owned(), channel.to_owned());
+        hm.insert("text".to_owned(), text.to_owned());
+        let parsed: ChatPostMessage = SlackRequest::request("chat.postMessage", hm)?;
+
+        if !parsed.ok {
+            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Bad Slack Response")));
+        }
+
+        Ok(())
     }
 }
 
