@@ -52,13 +52,8 @@ impl IRC {
         self.reader.peek()
     }
 
-    fn parse_privmsg(content: Option<String>) -> Option<Message> {
-        if content.is_none() {
-            return None;
-        }
-
+    fn parse_privmsg(content: String) -> Option<Message> {
         let r = Regex::new(r"^:(.+?)!.+ PRIVMSG (#.+?) :(.+)").unwrap();
-        let content = content.unwrap();
         let caps = r.captures(&content);
         if caps.is_none() {
             return None;
@@ -91,9 +86,14 @@ impl Iterator for IRC {
             if line.is_none() {
                 return None;
             }
-            let line = IRC::parse_privmsg(line);
-            if line.is_some() {
-                return line;
+            let line: String = line.unwrap();
+            if line.contains("PING") {
+                self.write(&line.replace("PING", "PONG")).ok();
+            } else {
+                let line = IRC::parse_privmsg(line);
+                if line.is_some() {
+                    return line;
+                }
             }
         }
     }
