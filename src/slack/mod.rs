@@ -10,6 +10,10 @@ use ::std::iter::Peekable;
 
 use self::response::*;
 
+fn encode_url(url: String) -> String {
+    url.replace(" ", "%20").replace("<", "%3C").replace(">", "%3E").replace("#", "%23")
+}
+
 pub struct SlackRequest {
     token: String,
 }
@@ -22,7 +26,7 @@ impl SlackRequest {
         for (key, val) in &argument {
             uri.push_str(key);
             uri.push('=');
-            uri.push_str(val);
+            uri.push_str(&encode_url(val.to_owned()));
             uri.push('&');
         }
         uri.pop();
@@ -98,7 +102,7 @@ impl SlackRequest {
         Ok(parsed.channel)
     }
 
-    pub fn chat_postMessage(&self, channel: &str, text: &str) -> Result<(), Box<Error>> {
+    pub fn chat_post_message(&self, channel: &str, text: &str) -> Result<(), Box<Error>> {
         let mut hm = HashMap::new();
         hm.insert("token".to_owned(), self.token.clone());
         hm.insert("channel".to_owned(), channel.to_owned());
