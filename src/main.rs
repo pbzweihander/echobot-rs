@@ -1,12 +1,16 @@
-extern crate serde;
-extern crate serde_json;
 extern crate echobot;
+extern crate serde_json;
 
 use std::error::Error;
 use std::fs::File;
 use std::env;
+use std::thread;
+use std::sync::mpsc;
+use std::iter::Peekable;
 
+use echobot::slack;
 use echobot::slack::Slack;
+use echobot::irc;
 use echobot::irc::IRC;
 use echobot::config::*;
 
@@ -20,27 +24,43 @@ fn init() -> Result<(), Box<Error>> {
     let config_file = File::open(config_file_path)?;
     let config: Config = serde_json::from_reader(config_file)?;
 
-    let mut irc = IRC::new(&config.irc.server, &config.irc.nickname)?;
-    irc.join_multi(&config.irc.channels.iter().map(AsRef::as_ref).collect::<Vec<_>>())?;
+    let (irc_message_tx, irc_message_rx): (mpsc::Sender<irc::Message>, mpsc::Receiver<irc::Message>) = mpsc::channel();
+    let (slack_message_tx, slack_message_rx): (mpsc::Sender<slack::Message>, mpsc::Receiver<slack::Message>) = mpsc::channel();
 
-    for line in irc {
-        println!("{}", line);
-    }
+    let irc_channel = config.irc.channel.clone();
+    let slack_channel = config.slack.channel.clone();
 
-    // let slack = Slack::new(&config.slack.token)?;
-    // let rtm = slack.rtm_connect()?;
+    let mut irc: IRC = IRC::new(&config.irc.server, &config.irc.nickname)?;
 
-    // for m in slack.users_list()? {
-    //     println!("{}", m.name);
-    // }
+    let mut slack: Slack = Slack::new(&config.slack.token)?;
+    let mut rtm: Peekable<slack::SlackRTM> = slack.request.rtm_connect()?;
 
-    // for c in slack.channels_list()? {
-    //     println!("{}", c.name);
-    // }
+    let irc_thread = thread::spawn(move || loop {
+        if irc.peek().is_some() {
+            let m = irc.next().unwrap();
+            if irc_channel == m.channel {
+                irc_message_tx.send(m).unwrap();
+            }
+            for m in slack_message_rx.try_iter() {
+                irc.privmsg(&irc_channel, &format!("<{}> {}", m.channel.name, m.user.name)).unwrap();
+            }
+        }
+    });
 
-    // for l in rtm {
-    //     println!("{}", l.text);
-    // }
+    let slack_thread = thread::spawn(move || loop {
+        if rtm.peek().is_some() {
+            let m = slack.raw_message_to_message(rtm.next().unwrap()).unwrap();
+            if slack_channel == m.channel.name {
+                slack_message_tx.send(m).unwrap();
+            }
+            for m in irc_message_rx.try_iter() {
+                slack.request.chat_postMessage(&slack_channel, &format!("<{}> {}", m.channel, m.user)).unwrap();
+            }
+        }
+    });
+
+    irc_thread.join().ok();
+    slack_thread.join().ok();
 
     Ok(())
 }
