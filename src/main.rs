@@ -35,29 +35,33 @@ fn init() -> Result<(), Box<Error>> {
     let mut slack: Slack = Slack::new(&config.slack.token)?;
     let mut rtm: Peekable<slack::SlackRTM> = slack.request.rtm_connect()?;
 
-    let irc_thread = thread::spawn(move || loop {
+    irc.join(&irc_channel)?;
+
+    let irc_thread = thread::Builder::new().name("IRC Thread".to_owned()).spawn(move || loop {
         if irc.peek().is_some() {
             let m = irc.next().unwrap();
+            println!("IRC: <{}> {}", m.user, m.text);
             if irc_channel == m.channel {
                 irc_message_tx.send(m).unwrap();
             }
             for m in slack_message_rx.try_iter() {
-                irc.privmsg(&irc_channel, &format!("<{}> {}", m.channel.name, m.user.name)).unwrap();
+                irc.privmsg(&irc_channel, &format!("<{}> {}", m.user.name, m.text)).unwrap();
             }
         }
-    });
+    })?;
 
-    let slack_thread = thread::spawn(move || loop {
+    let slack_thread = thread::Builder::new().name("Slack Thread".to_owned()).spawn(move || loop {
         if rtm.peek().is_some() {
             let m = slack.raw_message_to_message(rtm.next().unwrap()).unwrap();
+            println!("Slk: <{}> {}", m.user.name, m.text);
             if slack_channel == m.channel.name {
                 slack_message_tx.send(m).unwrap();
             }
             for m in irc_message_rx.try_iter() {
-                slack.request.chat_postMessage(&slack_channel, &format!("<{}> {}", m.channel, m.user)).unwrap();
+                slack.request.chat_post_message(&slack_channel, &format!("<{}> {}", m.user, m.text)).unwrap();
             }
         }
-    });
+    })?;
 
     irc_thread.join().ok();
     slack_thread.join().ok();
