@@ -1,4 +1,4 @@
-use super::{User, Channel};
+use super::{User, Channel, RawMessage};
 
 #[derive(Serialize, Deserialize)]
 pub struct RTMConnect {
@@ -28,4 +28,12 @@ pub struct ChannelsList {
 pub struct ChannelsInfo {
     pub ok: bool,
     pub channel: Channel,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct ChatPostMessage {
+    pub ok: bool,
+    pub ts: String,
+    pub channel: String,
+    pub message: RawMessage,
 }
