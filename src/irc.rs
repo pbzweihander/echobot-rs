@@ -19,8 +19,8 @@ impl IRC {
         let mut stream = strm.try_clone()?;
         let reader = BufReader::new(strm).lines().peekable();
 
-        stream.write_all(format!("USER {} 0 * :zweihander-bot\n", nickname).as_bytes())?;
-        stream.write_all(format!("NICK {}\n", nickname).as_bytes())?;
+        stream.write_all(format!("USER {} 0 * :zweihander-bot\r\n", nickname).as_bytes())?;
+        stream.write_all(format!("NICK {}\r\n", nickname).as_bytes())?;
         stream.flush()?;
 
         Ok(IRC { stream, reader })
@@ -32,7 +32,7 @@ impl IRC {
     }
 
     pub fn privmsg(&mut self, channel: &str, message: &str) -> Result<(), Box<Error>> {
-        self.write(&format!("PRIVMSG {} :{}", channel, message))?;
+        self.write(&format!("PRIVMSG {} :{}\r\n", channel, message))?;
         Ok(())
     }
 
@@ -44,7 +44,7 @@ impl IRC {
     }
 
     pub fn join(&mut self, channel: &str) -> Result<(), Box<Error>> {
-        self.write(&format!("JOIN {}\n", channel))?;
+        self.write(&format!("JOIN {}\r\n", channel))?;
         Ok(())
     }
 
