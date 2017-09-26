@@ -19,11 +19,25 @@ impl IRC {
         let mut stream = strm.try_clone()?;
         let reader = BufReader::new(strm).lines().peekable();
 
-        stream.write_all(format!("USER {} 0 * :zweihander-bot\r\n", nickname).as_bytes())?;
-        stream.write_all(format!("NICK {}\r\n", nickname).as_bytes())?;
+        stream.write_all(
+            format!("USER {} 0 * :zweihander-bot\n", nickname)
+                .as_bytes(),
+        )?;
+        stream.write_all(format!("NICK {}\n", nickname).as_bytes())?;
         stream.flush()?;
 
         Ok(IRC { stream, reader })
+    }
+
+    pub fn try_clone(&mut self) -> Result<IRC, Box<Error>> {
+        let stream1 = self.stream.try_clone()?;
+        let stream2 = stream1.try_clone()?;
+        let reader = BufReader::new(stream1).lines().peekable();
+
+        Ok(IRC {
+            stream: stream2,
+            reader,
+        })
     }
 
     pub fn write(&mut self, content: &str) -> Result<(), Box<Error>> {
@@ -31,8 +45,14 @@ impl IRC {
         Ok(())
     }
 
+    pub fn writeln(&mut self, content: &str) -> Result<(), Box<Error>> {
+        let mut s = content.to_owned();
+        s.push('\n');
+        self.write(&s)
+    }
+
     pub fn privmsg(&mut self, channel: &str, message: &str) -> Result<(), Box<Error>> {
-        self.write(&format!("PRIVMSG {} :{}\r\n", channel, message))?;
+        self.writeln(&format!("PRIVMSG {} :{}", channel, message))?;
         Ok(())
     }
 
@@ -44,7 +64,7 @@ impl IRC {
     }
 
     pub fn join(&mut self, channel: &str) -> Result<(), Box<Error>> {
-        self.write(&format!("JOIN {}\r\n", channel))?;
+        self.writeln(&format!("JOIN {}", channel))?;
         Ok(())
     }
 
@@ -62,18 +82,28 @@ impl IRC {
 
         let user = match caps.get(1) {
             Some(s) => s.as_str(),
-            None => { return None; }
+            None => {
+                return None;
+            }
         };
         let channel = match caps.get(2) {
             Some(s) => s.as_str(),
-            None => { return None; }
+            None => {
+                return None;
+            }
         };
         let text = match caps.get(3) {
             Some(s) => s.as_str(),
-            None => { return None; }
+            None => {
+                return None;
+            }
         };
 
-        Some(Message { channel: channel.to_owned(), user: user.to_owned(), text: text.to_owned() })
+        Some(Message {
+            channel: channel.to_owned(),
+            user: user.to_owned(),
+            text: text.to_owned(),
+        })
     }
 }
 
@@ -88,7 +118,7 @@ impl Iterator for IRC {
             }
             let line: String = line.unwrap();
             if line.contains("PING") {
-                self.write(&line.replace("PING", "PONG")).ok();
+                self.writeln(&line.replace("PING", "PONG")).ok();
             } else {
                 let line = IRC::parse_privmsg(line);
                 if line.is_some() {
