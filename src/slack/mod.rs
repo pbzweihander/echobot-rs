@@ -4,14 +4,17 @@ extern crate serde_json;
 extern crate tungstenite;
 extern crate url;
 
-use ::std::error::Error;
-use ::std::collections::HashMap;
-use ::std::iter::Peekable;
+use std::error::Error;
+use std::collections::HashMap;
+use std::iter::Peekable;
 
 use self::response::*;
 
 fn encode_url(url: String) -> String {
-    url.replace(" ", "%20").replace("<", "%3C").replace(">", "%3E").replace("#", "%23")
+    url.replace(" ", "%20")
+        .replace("<", "%3C")
+        .replace(">", "%3E")
+        .replace("#", "%23")
 }
 
 pub struct SlackRequest {
@@ -19,7 +22,10 @@ pub struct SlackRequest {
 }
 
 impl SlackRequest {
-    pub fn request<R: serde::de::DeserializeOwned>(api: &str, argument: HashMap<String, String>) -> Result<R, Box<Error>> {
+    pub fn request<R: serde::de::DeserializeOwned>(
+        api: &str,
+        argument: HashMap<String, String>,
+    ) -> Result<R, Box<Error>> {
         let mut uri = String::from("https://slack.com/api/");
         uri.push_str(api);
         uri.push('?');
@@ -44,7 +50,10 @@ impl SlackRequest {
         let parsed: RTMConnect = SlackRequest::request("rtm.connect", hm)?;
 
         if !parsed.ok {
-            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Bad Slack Response")));
+            return Err(Box::new(::std::io::Error::new(
+                ::std::io::ErrorKind::Other,
+                "Bad Slack Response",
+            )));
         }
 
         let (socket, _) = tungstenite::connect(url::Url::parse(&parsed.url)?)?;
@@ -58,7 +67,10 @@ impl SlackRequest {
         let parsed: UsersList = SlackRequest::request("users.list", hm)?;
 
         if !parsed.ok {
-            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Bad Slack Response")));
+            return Err(Box::new(::std::io::Error::new(
+                ::std::io::ErrorKind::Other,
+                "Bad Slack Response",
+            )));
         }
 
         Ok(parsed.members)
@@ -71,7 +83,10 @@ impl SlackRequest {
         let parsed: UsersInfo = SlackRequest::request("users.info", hm)?;
 
         if !parsed.ok {
-            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Bad Slack Response")));
+            return Err(Box::new(::std::io::Error::new(
+                ::std::io::ErrorKind::Other,
+                "Bad Slack Response",
+            )));
         }
 
         Ok(parsed.user)
@@ -83,7 +98,10 @@ impl SlackRequest {
         let parsed: ChannelsList = SlackRequest::request("channels.list", hm)?;
 
         if !parsed.ok {
-            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Bad Slack Response")));
+            return Err(Box::new(::std::io::Error::new(
+                ::std::io::ErrorKind::Other,
+                "Bad Slack Response",
+            )));
         }
 
         Ok(parsed.channels)
@@ -96,7 +114,10 @@ impl SlackRequest {
         let parsed: ChannelsInfo = SlackRequest::request("channels.info", hm)?;
 
         if !parsed.ok {
-            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Bad Slack Response")));
+            return Err(Box::new(::std::io::Error::new(
+                ::std::io::ErrorKind::Other,
+                "Bad Slack Response",
+            )));
         }
 
         Ok(parsed.channel)
@@ -110,10 +131,19 @@ impl SlackRequest {
         let parsed: ChatPostMessage = SlackRequest::request("chat.postMessage", hm)?;
 
         if !parsed.ok {
-            return Err(Box::new(::std::io::Error::new(::std::io::ErrorKind::Other, "Bad Slack Response")));
+            return Err(Box::new(::std::io::Error::new(
+                ::std::io::ErrorKind::Other,
+                "Bad Slack Response",
+            )));
         }
 
         Ok(())
+    }
+}
+
+impl Clone for SlackRequest {
+    fn clone(&self) -> SlackRequest {
+        SlackRequest { token: self.token.clone() }
     }
 }
 
@@ -125,7 +155,11 @@ pub struct Slack {
 
 impl Slack {
     pub fn new(token: &str) -> Result<Self, Box<Error>> {
-        Ok(Slack { request: SlackRequest { token: token.to_owned() }, user_hashmap: HashMap::new(), channel_hashmap: HashMap::new() })
+        Ok(Slack {
+            request: SlackRequest { token: token.to_owned() },
+            user_hashmap: HashMap::new(),
+            channel_hashmap: HashMap::new(),
+        })
     }
 
     fn make_user_hashmap(&mut self) -> Result<(), Box<Error>> {
@@ -175,7 +209,21 @@ impl Slack {
     pub fn raw_message_to_message(&mut self, m: RawMessage) -> Result<Message, Box<Error>> {
         let c = self.get_channel(&m.channel)?;
         let u = self.get_user(&m.user)?;
-        Ok(Message{ channel: c, user: u, text: m.text.clone() })
+        Ok(Message {
+            channel: c,
+            user: u,
+            text: m.text.clone(),
+        })
+    }
+}
+
+impl Clone for Slack {
+    fn clone(&self) -> Slack {
+        Slack {
+            request: self.request.clone(),
+            user_hashmap: self.user_hashmap.clone(),
+            channel_hashmap: self.channel_hashmap.clone(),
+        }
     }
 }
 
